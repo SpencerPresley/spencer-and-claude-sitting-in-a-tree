@@ -1,22 +1,25 @@
 # adversarial-review
 
-An adversarial reviewer subagent for **code** and **plans**. Instead of validating your work, it tries to break confidence in it — surfacing the strongest, best-supported reasons it should not ship — and it reviews **only the exact slice you name**.
+An adversarial reviewer for code or plans. It reviews only the exact slice you name and reports the strongest, best-supported reasons it should not ship. It does not validate, and it never edits.
 
 ## How it works
 
-- A single skill (`adversarial-review`, named to match the plugin) is the entry point. It determines the mode (code or plan), pins the **exact slice** to review (modeled on the precision of the superpowers code-review request — name the exact diff/commits/files, not a vague "the branch"), captures intent, and dispatches.
-- A read-only subagent (`adversarial-reviewer`) holds the adversarial persona as its **system prompt** (so the stance is reliable, not diluted by a "be helpful" base) and is locked to read-only tools (so "review only" is enforced, not merely requested). It does its own diff/file reading in its own context, judges only the slice, and returns a ship / do-not-ship verdict with prioritized findings.
+- The `adversarial-review` skill is the entry point. It picks the mode (code or plan), pins the exact slice (specific diff / commits / files, or a plan file / section — never a vague "the branch"), captures the intent, and dispatches.
+- The `adversarial-reviewer` subagent holds the adversarial stance as its system prompt. It reads the slice in its own context (running the diff itself), judges only that slice, and returns a verdict (ship / ship-with-fixes / do-not-ship) with prioritized findings. It only reviews — it never edits.
+
+Review-only is enforced by the agent's instructions plus a minimal toolset (Read, Grep, Glob, and Bash — the latter only to run `git`); it is not tool-sandboxed, so for a hard guarantee restrict Bash at the settings level. The reviewer inherits the session's model and effort, so review depth tracks the model you're running.
 
 ## Usage
 
-Invoke it in conversation — e.g. *"run the adversarial reviewer on the plan"* or *"adversarially review my staged changes, focus on the auth path"* — or directly:
+In conversation:
 
-```text
+> "adversarially review my staged changes"
+> "red-team the plan at docs/plan.md, focus on the migration step"
+
+Or directly:
+
+```
 /adversarial-review [code|plan] [target] [focus...]
 ```
 
-Scope is always explicit: working tree, staged, a named commit, an `A..B` range, or specific files for code; a plan file or section for plan. It never silently reviews the whole branch.
-
-## Design
-
-The reviewer's system prompt fuses a disciplined finding bar (what counts as a real, author-would-fix bug) with an adversarial stance (default skepticism, an attack-surface taxonomy, "try to disprove it"). It is review-only and never edits. The slice-specification approach embodies the precision of the superpowers code-review pattern without depending on that plugin.
+Scope is always explicit — working tree, staged, a commit, an `A..B` range, or specific files (code); a plan file or section (plan). It never silently reviews the whole branch.
