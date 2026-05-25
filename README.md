@@ -19,6 +19,7 @@ Then install individual plugins:
 | Plugin | What it does |
 |--------|-------------|
 | [claude-md-discovery-extended](plugins/claude-md-discovery-extended/) | Auto-discovers and loads CLAUDE.md files from any directory outside your project tree when the model accesses files there. |
+| [adversarial-review](plugins/adversarial-review/) | An adversarial code/plan reviewer subagent that challenges the work to find the strongest reasons not to ship — reviewing only the exact slice you name. |
 
 ## License
 

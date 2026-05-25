@@ -20,6 +20,13 @@
       "description": "Dynamically injects detailed Codex plugin context into sessions only when the Codex plugin is enabled.",
       "version": "1.1.0",
       "keywords": ["codex", "context", "dynamic-loading", "hooks"]
+    },
+    {
+      "name": "adversarial-review",
+      "source": "./plugins/adversarial-review",
+      "description": "An adversarial code/plan reviewer subagent that challenges the work to find the strongest reasons not to ship. Reviews only the exact slice you name; driven by the adversarial-review skill.",
+      "version": "0.1.0",
+      "keywords": ["code-review", "adversarial", "agent", "skill", "plan-review"]
     }
   ]
 }
