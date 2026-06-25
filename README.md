@@ -1,17 +1,17 @@
-# simple-but-powerful
+# spencer-and-claude-sitting-in-a-tree
 
-Focused Claude Code plugins that each solve one specific problem. Small enough to actually use, sharp enough to actually help.
+Focused Claude Code plugins that each solve one specific problem. Simple but powerful, like how you feel when you're sitting high up in a tree with Claude and y'all are... well, ya know. Small enough to actually use, sharp enough to actually help.
 
 ## Installation
 
 ```text
-/plugin marketplace add SpencerPresley/simple-but-powerful
+/plugin marketplace add SpencerPresley/spencer-and-claude-sitting-in-a-tree
 ```
 
 Then install individual plugins:
 
 ```text
-/plugin install <plugin-name>@simple-but-powerful
+/plugin install <plugin-name>@spencer-and-claude-sitting-in-a-tree
 ```
 
 ## Plugins

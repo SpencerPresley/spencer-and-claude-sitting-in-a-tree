@@ -42,8 +42,8 @@ Also: registered in repo-root `.claude-plugin/marketplace.json`; added to repo-r
 
 - [ ] Install + restart:
   ```text
-  /plugin marketplace add /Users/spencerpresley/code/simple-but-powerful
-  /plugin install adversarial-review@simple-but-powerful
+  /plugin marketplace add SpencerPresley/spencer-and-claude-sitting-in-a-tree
+  /plugin install adversarial-review@spencer-and-claude-sitting-in-a-tree
   ```
   Restart the session. Confirm via `/agents` that `adversarial-reviewer` is registered and `/adversarial-review` exists (matching how your `hack-skills-router` resolves to `/hack-skills-router`).
 - [ ] **Code mode, explicit slice:** make a small deliberately-flawed edit (e.g., drop a null check), then say *"adversarially review my working tree changes."* Expect: the skill reads `code.md`, pins the working-tree slice, dispatches; the agent returns a **Verdict** line + prioritized findings with `path:line` and confidence, proposes no edits, and stays within the slice.
