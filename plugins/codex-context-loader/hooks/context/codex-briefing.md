@@ -1,31 +1,30 @@
-# Codex Integration (OpenAI GPT-5.4)
+# Codex Integration (OpenAI GPT-5.5)
 
-The Codex plugin provides access to OpenAI's Codex/GPT-5.4 as a second AI collaborator you can delegate work to.
+The Codex plugin provides OpenAI's Codex/GPT-5.5 as a second AI collaborator you can delegate work to.
 
-## codex:codex-rescue (Agent)
+_Codex routes to GPT-5.5 (OpenAI's latest); some plugin text still says GPT-5.4 — the same guidance applies._
 
-Delegates tasks to Codex through a companion runtime. Use it proactively when:
+## Critical rules (read first)
 
-- Stuck on a bug and want a fresh perspective from a different model
-- Want a second implementation or diagnosis pass
-- Need deeper root-cause investigation with independent analysis
+- **Never auto-apply review fixes.** If the user runs `/codex:review` or `/codex:adversarial-review` and you see the output, treat it as read-only: present findings ordered by severity, then STOP and ask which, if any, to fix. Do not edit files off a review — even obvious fixes.
+- **Return Codex output verbatim** — no paraphrasing or summarizing of review or rescue output. Keep file paths and line numbers exactly as reported.
+- **`codex:rescue` is write-capable** — Codex may edit files in the workspace.
+- If Codex isn't set up/authenticated, point the user to `/codex:setup`; don't improvise auth.
 
-The agent is a thin forwarding wrapper — it shapes the prompt, hands it to Codex, and returns the result unchanged. It does not inspect the repo or solve problems itself.
+## What you can invoke
 
-User flags: `--background` (async), `--wait` (block), `--resume` (continue prior work), `--fresh` (start clean), `--model <name>` (e.g. `spark` for gpt-5.3-codex-spark), `--effort <level>` (none/minimal/low/medium/high/xhigh). Defaults to write-capable.
+### `codex:rescue` (Agent delegation)
+Hands a task to the `codex:codex-rescue` subagent — debug, fix, implement, investigate, or continue prior Codex work. Use it proactively for a substantial, clearly-bounded handoff; don't grab quick tasks you can finish yourself. The agent is a thin forwarder: it shapes the prompt, hands it to Codex, and returns the result unchanged. Flags: `--background` | `--wait`, `--resume` | `--fresh`, `--model <name|spark>` (`spark` → `gpt-5.3-codex-spark`), `--effort <none|minimal|low|medium|high|xhigh>`. **Write-capable by default.** Leave `--model`/`--effort` unset unless the user asks.
 
-## codex:rescue (Skill)
+### `codex:setup`
+Checks Codex CLI install/auth and optionally toggles the stop-time review gate (runs a Codex review before allowing session end).
 
-User-invocable trigger for the rescue agent. Invoke via `/codex:rescue`.
+## User-only commands (you can't invoke these)
 
-## codex:setup (Skill)
+In this build, these are slash commands only the user can run — `codex:review`, `codex:adversarial-review`, `codex:status`, `codex:result`, `codex:cancel`, `codex:transfer`. After launching any background Codex work, point the user to `/codex:status`, `/codex:result`, and `/codex:cancel <id>` to follow up.
 
-Verifies Codex CLI installation and optionally enables the stop-time review gate (runs a Codex review before allowing session end).
+## Internal skills (used by the rescue agent — do not invoke directly)
 
-## Internal Skills
-
-These are used internally by the rescue agent. Do not invoke directly.
-
-- **codex-cli-runtime**: Runtime contract for calling codex-companion. The rescue agent's only tool.
-- **codex-result-handling**: How to present Codex output. Key rule: after review findings, always ask the user which issues to fix — never auto-apply.
-- **gpt-5-4-prompting**: Prompt engineering for GPT-5.4. XML-tagged block structure: task, output contract, verification loop, grounding rules.
+- **codex-cli-runtime** — runtime contract for the rescue agent's single `task` call.
+- **codex-result-handling** — how to present Codex output; enforces the no-auto-fix rule.
+- **gpt-5-4-prompting** — XML-block prompt engineering for GPT-5.5 (`<task>`, output contract, verification loop, grounding rules).

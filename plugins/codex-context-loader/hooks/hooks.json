@@ -1,5 +1,5 @@
 {
-  "description": "Injects detailed Codex context on session start when the Codex plugin is detected as installed.",
+  "description": "Injects Codex context when the Codex plugin is enabled — full briefing at session start, a compact guardrail at subagent start. Chooses base vs extended by the installed plugin's actual capability.",
   "hooks": {
     "SessionStart": [
       {
@@ -7,7 +7,19 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/inject-codex-context.sh\"",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/inject-codex-context.sh\" SessionStart",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/inject-codex-context.sh\" SubagentStart",
             "timeout": 5
           }
         ]
