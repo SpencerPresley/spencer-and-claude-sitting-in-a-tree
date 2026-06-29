@@ -11,8 +11,8 @@ Types are intentionally omitted from `Args` and `Returns`: they come from the fu
 
   Rather than carry that caveat in the skill for every run, the hook injects it only when it's relevant:
 
-  1. When the skill is invoked — whether you type `/fix-docstrings` (a `UserPromptExpansion` hook) or the model invokes the skill itself (a `PostToolUse` hook on the `Skill` tool) — a per-session flag is set.
-  2. While that flag is set, a `PostToolUse` hook on `Read` checks each Python file the skill opens. If a file defines `@tool` functions *and* imports LangChain, the hook injects a pointer to `references/langchain-tool-docstrings.md` and tells the model to apply those parser-safe rules to that file — then latches so it fires at most once per run.
+  1. When the skill is invoked — whether you type `/fix-docstrings` (a `UserPromptExpansion` hook) or the model invokes the skill itself (a `PostToolUse` hook on the `Skill` tool) — a per-session flag is set. On the `/fix-docstrings <target>` path the typed target is available, so the hook **scans it up front** and, if any files in it define `@tool` functions, injects the exact list along with the pointer to `references/langchain-tool-docstrings.md`. You learn which files need parser-safe rules before editing any of them.
+  2. For everything the upfront scan can't see — the model invoking the skill (no target), or a file read from outside the named target — a `PostToolUse` hook on `Read` is the fallback. It checks each Python file the skill opens and injects the parser-safe rules graduated to avoid wasted tokens: the **first** `@tool` file in the session gets the full pointer; every **later** one gets a light reminder to apply the rules already in context (no re-read). Each file is flagged at most once.
 
   When you're not fixing LangChain tools, the reference is never loaded and the caveat never enters context.
 
