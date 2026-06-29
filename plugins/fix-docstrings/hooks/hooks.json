@@ -3,7 +3,7 @@
   "hooks": {
     "UserPromptExpansion": [
       {
-        "matcher": "fix-docstrings",
+        "matcher": ".*fix-docstrings.*",
         "hooks": [
           {
             "type": "command",

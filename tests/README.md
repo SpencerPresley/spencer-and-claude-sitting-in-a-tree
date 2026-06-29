@@ -39,16 +39,33 @@ Pieces:
 | `/skill` typed manually | ✅ fires | ❌ does **not** fire | ✅ fires |
 | Model invokes the skill | ❌ does not fire | ✅ fires | ✅ fires |
 
-- `UserPromptExpansion.command_name` is the **bare** skill name (`internal-plugin-testing`),
-  not plugin-namespaced. `command_args` holds the rest of the prompt;
-  `command_source` is `projectSettings` (would be `plugin` for an installed
-  plugin — the docs example for a plugin command likewise shows a bare
-  `command_name`).
-- `PostToolUse[Skill].tool_input.skill` is the **bare** skill name.
-- `PostToolUse[Read].tool_input.file_path` is an **absolute** path.
+- `UserPromptExpansion.command_name` depends on where the skill lives, and this
+  bit us:
+  - **project** skill (`command_source: projectSettings`) → **bare** name
+    (`internal-plugin-testing`).
+  - **plugin** skill (`command_source: plugin`) → **namespaced** `plugin:skill`,
+    e.g. `fix-docstrings:fix-docstrings`. (The docs example showing a bare plugin
+    `command_name` is misleading — installed plugins namespace it.)
+- `command_args` holds the rest of the prompt; `cwd` is present (used by the
+  upfront directory scan to resolve the typed target).
+- `PostToolUse[Skill].tool_input.skill` carries the skill name; `[Read]`'s
+  `tool_input.file_path` is an **absolute** path.
 
-This is why `fix-docstrings` needs **both** a `UserPromptExpansion` hook (manual
-`/fix-docstrings`) **and** a `PostToolUse[Skill]` hook (model invocation) to arm
-its detector — neither path covers the other. The matcher `fix-docstrings` and
-the script's substring check on the skill name both hold regardless of
-namespacing.
+### Matcher semantics (verified by probe)
+
+A hook `matcher` is a **`re.fullmatch` regex against the whole `command_name`**,
+not a substring test (empty string `""` is special-cased to match everything):
+
+| matcher | `fix-docstrings:fix-docstrings` |
+|---|---|
+| `fix-docstrings` | ❌ (not a full match) |
+| `^fix-docstrings$` | ❌ |
+| `fix-docstrings:fix-docstrings` | ✅ |
+| `fix-.*` / `.*fix-docstrings.*` | ✅ |
+
+So `fix-docstrings` needs **both** a `UserPromptExpansion` hook (manual
+`/fix-docstrings` — namespaced command, so the matcher must be
+`.*fix-docstrings.*`, **not** `fix-docstrings`) **and** a `PostToolUse[Skill]`
+hook (model invocation, matched on the tool name `Skill`). Neither path covers
+the other. The original `fix-docstrings` matcher silently never fired for the
+installed plugin; only an end-to-end run against the installed copy caught it.
