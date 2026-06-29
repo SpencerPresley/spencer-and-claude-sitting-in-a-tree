@@ -1,10 +1,18 @@
 # tests
 
-Throwaway instrumentation for discovering the exact stdin payloads Claude Code
-hands to hook events — used to validate the `fix-docstrings` plugin's hook
-design against reality instead of guessing undocumented fields.
+Tests for this repo's plugin hooks.
 
-## Run it
+- **`test-langchain-tool-hook.sh`** — deterministic assertions for the
+  `fix-docstrings` LangChain hook (no live model). Feeds crafted payloads and
+  checks the injected context: the `UserPromptExpansion` upfront scan of a
+  file/directory target lists exactly the `@tool` files, pre-seeded files stay
+  silent on `Read`, and the Read-detector fallback is graduated (FULL → LIGHT →
+  silent-on-re-read). Run it directly; exits non-zero on any failure.
+- **`run-hook-capture-test.sh`** — instrumentation for discovering the exact
+  stdin payloads Claude Code hands to hook events, used to validate the hook
+  design against reality instead of guessing undocumented fields.
+
+## Capture harness
 
 ```bash
 tests/run-hook-capture-test.sh
