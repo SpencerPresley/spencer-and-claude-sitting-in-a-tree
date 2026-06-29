@@ -1,0 +1,39 @@
+{
+  "_comment": "Throwaway hook capture config for tests/. NOT auto-loaded by Claude Code (only settings.json / settings.local.json are). Loaded explicitly via `claude -p --settings .claude/hooks.json` by tests/run-hook-capture-test.sh to record the real payloads each hook event receives. The UserPromptExpansion matcher is empty on purpose so it fires on every slash command and reveals the actual command_name.",
+  "hooks": {
+    "UserPromptExpansion": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR}/tests/capture-hook-input.py\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR}/tests/capture-hook-input.py\"",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR}/tests/capture-hook-input.py\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

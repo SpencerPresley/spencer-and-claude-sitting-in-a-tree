@@ -4,3 +4,6 @@ __pycache__/
 .pytest_cache/
 .DS_Store
 .claude/settings.local.json
+
+# hook capture test outputs (throwaway)
+tests/outputs/*.json
