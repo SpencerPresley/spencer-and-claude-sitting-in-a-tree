@@ -1,8 +1,7 @@
 ---
 name: adversarial-review
-description: User-invoked adversarial review for a specific code slice or plan. Pins the exact target, captures intent and focus, and dispatches a read-only reviewer to find the strongest reasons not to ship.
+description: Adversarial review for a specific code slice or plan. Pins the exact target, captures intent and focus, and dispatches a read-only reviewer to find the strongest reasons not to ship.
 argument-hint: "[code|plan] [target] [focus...]"
-disable-model-invocation: true
 ---
 
 # Adversarial Review

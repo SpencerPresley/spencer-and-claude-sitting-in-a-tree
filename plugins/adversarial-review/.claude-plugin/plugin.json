@@ -1,7 +1,7 @@
 {
   "name": "adversarial-review",
-  "description": "A user-invoked adversarial reviewer subagent for code and plans. It uses a Codex-style review contract to challenge the exact slice under review and surface the strongest reasons not to ship.",
-  "version": "0.1.4",
+  "description": "An adversarial reviewer subagent for code and plans. It uses a Codex-style review contract to challenge the exact slice under review and surface the strongest reasons not to ship.",
+  "version": "0.1.5",
   "author": {
     "name": "Spencer Presley"
   }

@@ -4,7 +4,7 @@ An adversarial reviewer for code or plans. It reviews only the exact slice you n
 
 ## How it works
 
-- The `adversarial-review` skill is the user-invoked entry point. It has `disable-model-invocation: true`, so Claude does not see this skill's name or description unless the user invokes it.
+- The `adversarial-review` skill is the entry point. It stays visible to Claude so it can pair the exposed reviewer agent with the instructions that prepare a good request.
 - The skill pins the mode, exact target, collection guidance, intent, and focus, then dispatches the reviewer with a compact request.
 - The `adversarial-reviewer` subagent holds the adversarial stance as its system prompt. Its prompt follows a Codex-style review contract: attack surface, review method, finding bar, grounding rules, output contract, and final self-check. It returns human-readable Markdown, not JSON, unless you ask for JSON.
 

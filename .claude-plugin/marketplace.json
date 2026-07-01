@@ -24,8 +24,8 @@
     {
       "name": "adversarial-review",
       "source": "./plugins/adversarial-review",
-      "description": "A user-invoked adversarial code/plan reviewer that uses a Codex-style review contract while reviewing only the exact slice you name.",
-      "version": "0.1.4",
+      "description": "An adversarial code/plan reviewer that uses a Codex-style review contract while reviewing only the exact slice you name.",
+      "version": "0.1.5",
       "keywords": ["code-review", "adversarial", "agent", "skill", "plan-review"]
     },
     {

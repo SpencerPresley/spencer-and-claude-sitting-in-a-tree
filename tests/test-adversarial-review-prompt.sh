@@ -14,7 +14,16 @@ require_text() {
   fi
 }
 
-require_text "$SKILL" "disable-model-invocation: true"
+reject_text() {
+  local file="$1"
+  local text="$2"
+  if grep -Fq "$text" "$file"; then
+    echo "unexpected text in ${file#$ROOT/}: $text" >&2
+    exit 1
+  fi
+}
+
+reject_text "$SKILL" "disable-model-invocation"
 require_text "$SKILL" "<adversarial_review_request>"
 require_text "$SKILL" "<mode>"
 require_text "$SKILL" "<target_label>"
