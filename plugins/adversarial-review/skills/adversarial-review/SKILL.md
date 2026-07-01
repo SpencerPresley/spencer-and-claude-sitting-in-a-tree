@@ -1,62 +1,66 @@
 ---
 name: adversarial-review
-description: Run the adversarial reviewer on code or a plan. Use when the user asks to adversarially review, red-team, challenge, or pressure-test a specific change or plan — to find the strongest reasons it should not ship. Reviews only the exact slice the user names.
+description: User-invoked adversarial review for a specific code slice or plan. Pins the exact target, captures intent and focus, and dispatches a read-only reviewer to find the strongest reasons not to ship.
 argument-hint: "[code|plan] [target] [focus...]"
+disable-model-invocation: true
 ---
 
-## Adversarial review
+# Adversarial Review
 
-You are setting up an adversarial review and dispatching it to the `adversarial-reviewer` subagent. You are the input builder, not the reviewer — do not review or fix anything yourself.
+You are the input builder for the `adversarial-reviewer` subagent. Do not review, analyze, fix, or pre-judge the work yourself.
 
-The reviewer wakes with no context, so your whole job is to hand it three things: the **mode**, the **exact slice** to review, and the **intent**. It then reviews only that slice.
+Your job is to build a tight request with five fields: mode, target label, collection guidance, intent, and user focus. The reviewer has no reliable context except what you send.
 
-### 1. Determine mode
+## 1. Pick The Mode
 
-- `code` — reviewing a code change/diff.
-- `plan` — reviewing a plan/design/spec document.
+- `code`: a code change, diff, commit, range, branch comparison, staged change, working tree, or specific file set.
+- `plan`: a plan, design, spec, tracker note, or named section of one.
 
-Take it from the user's request ("review the plan" → plan; "review this diff/change" → code) or the first argument. If it is genuinely unclear, ask.
+Infer the mode from the user's invocation or first argument. If it is genuinely unclear, ask before dispatching.
 
-### 2. Pin the exact slice + intent
+## 2. Pin The Target
 
-The reviewer must judge only the slice the user wants — never the whole branch or unrelated work. Pinning this precisely is the most important thing you do.
+The target is the exact slice the user wants reviewed. Never silently widen it.
 
-**Code mode — pin exactly the slice the user means, and give the command that produces it.** Common cases:
+For code, name the target and give the read-only command that shows it:
 
-| User means | Diff command |
+| User target | Collection guidance |
 |---|---|
-| "my changes" / uncommitted | `git diff HEAD` (+ untracked via `git status --short --untracked-files=all`) |
-| "what I staged" | `git diff --cached` |
-| "this commit" / a SHA | `git show <sha>` |
-| "these commits" / a range | `git diff <A>..<B>` |
-| "the whole branch" / "everything vs main" | `git diff <base>...HEAD` |
-| "just these files" | append `-- <paths>` to any of the above |
+| working tree / my changes | Run `git status --short --untracked-files=all`, then inspect `git diff HEAD` plus relevant untracked files. |
+| staged changes | Run `git diff --cached`. |
+| one commit | Run `git show <sha>`. |
+| commit range | Run `git diff <A>..<B>`. |
+| branch versus base | Run `git diff <base>...HEAD`. |
+| specific files | Append `-- <paths>` to the relevant diff command. |
 
-The slice is whatever the user actually intends — a base-branch diff is completely fine when that's the scope they want. The thing to avoid is *silently* widening to the whole branch when they meant a piece of it: if the scope isn't explicit (e.g., "review my work" on a branch with several things in flight), ask or take the narrowest obvious read rather than guess broad. Don't run the diff yourself — you only pick the command; the reviewer runs it in its own context so the diff stays out of this conversation.
+If the user says "review my work" and the repo may contain multiple unrelated changes, ask or choose the narrowest obvious target. Do not choose "whole branch" unless the user asked for it.
 
-**Plan mode — pin the document (or section):**
+For plans, name the file path, exact pasted text, or section. If the plan is only implicit in the conversation, resolve it to a concrete file/section or ask.
 
-- A file path → pass the path. "The plan" from the conversation → resolve it to a concrete path or the exact text.
-- Only part of it (a phase, a section, one decision) → narrow to that and say so; the reviewer challenges that slice, not the whole document.
-- If you can't identify a concrete plan, ask before dispatching.
+## 3. Capture Intent And Focus
 
-**Intent (both modes):** state in one sentence what the change/plan is supposed to achieve. The reviewer uses it to judge whether the work serves that goal.
+Intent is one sentence describing what the work is supposed to achieve. Do not defend the chosen approach or explain why it is right.
 
-### 3. Dispatch
+Focus is the user's requested pressure point, or `none`. Preserve the user's wording when useful.
 
-Call the Agent tool with `subagent_type: adversarial-review:adversarial-reviewer` (the agent is plugin-namespaced as `<plugin>:<agent>`; if your client lists it under a different prefix, use the available agent whose name ends in `:adversarial-reviewer`) and a `prompt` built from this template. Do not add persona instructions — the agent owns those.
+## 4. Dispatch
 
+Call the Agent tool with `subagent_type: adversarial-review:adversarial-reviewer`. If the client lists the agent with a different plugin prefix, use the available agent whose name ends in `:adversarial-reviewer`.
+
+Use this prompt shape exactly:
+
+```xml
+<adversarial_review_request>
+<mode>code|plan</mode>
+<target_label>...</target_label>
+<collection_guidance>...</collection_guidance>
+<intent>...</intent>
+<user_focus>none|...</user_focus>
+</adversarial_review_request>
 ```
-mode: <code|plan>
-Slice: <the explicit scope from step 2>
-How to see it: <exact diff command(s) for code | plan path/section for plan>
-Intent: <one sentence: what this change/plan is supposed to achieve>
-Focus: <the focus arguments, or "none">
-Review only this slice. Verify findings against the actual code/plan before reporting.
-```
 
-**Keep the reviewer sharp:** the `Intent` line says what the change/plan is *meant to achieve* — never why the chosen approach is *right*. Don't pre-justify the work. Pre-arguing it here, or softening its findings on the way back (step 4), are the two ways to blunt the reviewer — which defeats the entire point of running it.
+Do not add persona instructions. The agent owns the adversarial stance and output contract.
 
-### 4. Return
+## 5. Return
 
-Relay the reviewer's verdict and findings verbatim. Do not fix anything, soften findings, or start revising — unless the user asks.
+Relay the reviewer's verdict and findings verbatim. Do not summarize, soften, fix, or start revising unless the user asks.
