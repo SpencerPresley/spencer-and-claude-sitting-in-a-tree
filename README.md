@@ -20,7 +20,7 @@ Then install individual plugins:
 |--------|-------------|
 | [claude-md-discovery-extended](plugins/claude-md-discovery-extended/) | Auto-discovers and loads CLAUDE.md files from any directory outside your project tree when the model accesses files there. |
 | [codex-context-loader](plugins/codex-context-loader/) | Injects a detailed Codex-plugin briefing into your session — but only when the Codex plugin is actually enabled, so it costs zero context tokens when you're not using Codex. |
-| [adversarial-review](plugins/adversarial-review/) | An adversarial code/plan reviewer subagent that challenges the work to find the strongest reasons not to ship — reviewing only the exact slice you name. |
+| [adversarial-review](plugins/adversarial-review/) | User-invoked adversarial code/plan reviewer that uses a Codex-style review contract while reviewing only the exact slice you name. |
 | [fix-docstrings](plugins/fix-docstrings/) | Audits Python files for Google-style docstring compliance and fixes violations. A hook injects parser-safe rules just-in-time when the files being fixed define LangChain `@tool` functions, so the skill stays lean for the common case. |
 
 ## License

@@ -4,10 +4,11 @@ An adversarial reviewer for code or plans. It reviews only the exact slice you n
 
 ## How it works
 
-- The `adversarial-review` skill is the entry point. It picks the mode (code or plan), pins the exact slice (specific diff / commits / files, or a plan file / section — never a vague "the branch"), captures the intent, and dispatches.
-- The `adversarial-reviewer` subagent holds the adversarial stance as its system prompt. It reads the slice in its own context (running the diff itself), judges only that slice, and returns a verdict (ship / ship-with-fixes / do-not-ship) with prioritized findings. It only reviews — it never edits.
+- The `adversarial-review` skill is the user-invoked entry point. It has `disable-model-invocation: true`, so Claude does not see this skill's name or description unless the user invokes it.
+- The skill pins the mode, exact target, collection guidance, intent, and focus, then dispatches the reviewer with a compact request.
+- The `adversarial-reviewer` subagent holds the adversarial stance as its system prompt. Its prompt follows a Codex-style review contract: attack surface, review method, finding bar, grounding rules, output contract, and final self-check. It returns human-readable Markdown, not JSON, unless you ask for JSON.
 
-Review-only is enforced by the agent's instructions plus a minimal toolset (Read, Grep, Glob, and Bash — the latter only to run `git`). The reviewer inherits the session's model and effort, so review depth tracks the model you're running.
+Review-only is enforced by the agent's instructions plus a minimal toolset (Read, Grep, Glob, and Bash, with Bash reserved for read-only inspection such as `git`). The reviewer inherits the session's model and effort, so review depth tracks the model you're running.
 
 ## Usage
 

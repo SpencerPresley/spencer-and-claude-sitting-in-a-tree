@@ -24,8 +24,8 @@
     {
       "name": "adversarial-review",
       "source": "./plugins/adversarial-review",
-      "description": "An adversarial code/plan reviewer subagent that challenges the work to find the strongest reasons not to ship. Reviews only the exact slice you name; driven by the adversarial-review skill.",
-      "version": "0.1.3",
+      "description": "A user-invoked adversarial code/plan reviewer that uses a Codex-style review contract while reviewing only the exact slice you name.",
+      "version": "0.1.4",
       "keywords": ["code-review", "adversarial", "agent", "skill", "plan-review"]
     },
     {
