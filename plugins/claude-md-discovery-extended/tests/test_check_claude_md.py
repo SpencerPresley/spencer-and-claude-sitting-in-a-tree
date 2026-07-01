@@ -21,8 +21,13 @@ SCRIPT = str(
 # Helpers
 # ---------------------------------------------------------------------------
 
-def run_hook(payload: dict) -> tuple[int, str, str]:
+def run_hook(payload: dict, env: dict | None = None) -> tuple[int, str, str]:
     """Run the hook script with *payload* as JSON on stdin.
+
+    Args:
+        payload (dict): The hook input serialized to stdin.
+        env (dict | None): Environment for the subprocess. When ``None``
+            the parent environment is inherited unchanged.
 
     Returns (exit_code, stdout, stderr).
     """
@@ -31,6 +36,7 @@ def run_hook(payload: dict) -> tuple[int, str, str]:
         input=json.dumps(payload),
         capture_output=True,
         text=True,
+        env=env,
     )
     return proc.returncode, proc.stdout, proc.stderr
 
@@ -491,3 +497,100 @@ class TestEdgeCases:
         rc, _, stderr = run_hook(payload)
         assert rc == 2
         assert os.path.join(layout["sibling"], "CLAUDE.md") in stderr
+
+
+# ---------------------------------------------------------------------------
+# Config-directory exclusion
+#
+# `${CLAUDE_CONFIG_DIR:-~/.claude}` holds Claude Code's own config and
+# installed plugins. Its `CLAUDE.md` is the global user memory that Claude
+# Code always loads at startup, so discovery must never resurface anything
+# inside that tree -- otherwise touching any config/plugin file (which
+# happens constantly) nags the model to re-read files already in context.
+# ---------------------------------------------------------------------------
+
+@pytest.fixture()
+def config_layout(tmp_path):
+    """Create a project cwd and a separate Claude config dir tree.
+
+    tmp/workspace/project/                 (cwd, outside config)
+    tmp/workspace/sibling/                 CLAUDE.md (legit discovery)
+    tmp/cfghome/.claude/                   CLAUDE.md (global user memory)
+    tmp/cfghome/.claude/plugins/foo/       CLAUDE.md (plugin ships its own)
+    tmp/cfghome/.claude/plugins/foo/hooks/
+    """
+    project = tmp_path / "workspace" / "project"
+    sibling = tmp_path / "workspace" / "sibling"
+    config = tmp_path / "cfghome" / ".claude"
+    plugin_hooks = config / "plugins" / "foo" / "hooks"
+
+    project.mkdir(parents=True)
+    sibling.mkdir(parents=True)
+    plugin_hooks.mkdir(parents=True)
+
+    (sibling / "CLAUDE.md").write_text("# sibling\n")
+    (config / "CLAUDE.md").write_text("# global user memory\n")
+    (config / "plugins" / "foo" / "CLAUDE.md").write_text("# plugin repo\n")
+
+    return {
+        "project": str(project),
+        "sibling": str(sibling),
+        "config": str(config),
+        "plugin": str(config / "plugins" / "foo"),
+        "plugin_hooks": str(plugin_hooks),
+    }
+
+
+def config_env(config_dir: str) -> dict:
+    """Parent environment with CLAUDE_CONFIG_DIR pinned to *config_dir*."""
+    return {**os.environ, "CLAUDE_CONFIG_DIR": config_dir}
+
+
+class TestConfigDirExclusion:
+    def test_global_memory_not_reported(self, config_layout):
+        # Reading a config file (e.g. settings.json) must not resurface
+        # the global-memory CLAUDE.md sitting beside it.
+        sid = next_sid("cfg-global")
+        payload = build_json(
+            tool="Read", sid=sid, cwd=config_layout["project"],
+            file_path=os.path.join(config_layout["config"], "settings.json"),
+        )
+        rc, _, stderr = run_hook(payload, env=config_env(config_layout["config"]))
+        assert rc == 0
+        assert "CLAUDE.md" not in stderr
+
+    def test_plugin_claude_md_under_config_not_reported(self, config_layout):
+        # A plugin that ships its own CLAUDE.md inside the config tree
+        # must not be flagged when the model reads that plugin's files.
+        sid = next_sid("cfg-plugin")
+        payload = build_json(
+            tool="Read", sid=sid, cwd=config_layout["project"],
+            file_path=os.path.join(config_layout["plugin_hooks"], "script.py"),
+        )
+        rc, _, stderr = run_hook(payload, env=config_env(config_layout["config"]))
+        assert rc == 0
+        assert "CLAUDE.md" not in stderr
+
+    def test_bash_touching_config_path_not_reported(self, config_layout):
+        # The common real-world trigger: a Bash command that merely names
+        # a path inside the config dir (find/grep/ls over ~/.claude).
+        sid = next_sid("cfg-bash")
+        payload = build_json(
+            tool="Bash", sid=sid, cwd=config_layout["project"],
+            command=f"find {config_layout['config']} -name script.py",
+        )
+        rc, _, stderr = run_hook(payload, env=config_env(config_layout["config"]))
+        assert rc == 0
+        assert "CLAUDE.md" not in stderr
+
+    def test_sibling_still_discovered_with_config_dir_set(self, config_layout):
+        # Guard against over-exclusion: a genuine sibling outside the
+        # config tree must still be discovered while CLAUDE_CONFIG_DIR is set.
+        sid = next_sid("cfg-sibling-ok")
+        payload = build_json(
+            tool="Read", sid=sid, cwd=config_layout["project"],
+            file_path=os.path.join(config_layout["sibling"], "file.txt"),
+        )
+        rc, _, stderr = run_hook(payload, env=config_env(config_layout["config"]))
+        assert rc == 2
+        assert os.path.join(config_layout["sibling"], "CLAUDE.md") in stderr

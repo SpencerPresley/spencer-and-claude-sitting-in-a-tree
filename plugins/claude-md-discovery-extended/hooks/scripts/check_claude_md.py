@@ -92,6 +92,25 @@ def resolve_target_path(candidates: list[str]) -> str | None:
     return None
 
 
+def config_dir() -> str:
+    """Return the Claude Code config directory, canonicalized.
+
+    Honors `CLAUDE_CONFIG_DIR`, falling back to `~/.claude`. Everything
+    inside this tree is Claude Code's own config and installed plugins;
+    its `CLAUDE.md` is the global user memory that Claude Code always loads
+    at startup. Discovery must never resurface files from here, or touching
+    any config/plugin path (which happens constantly) would nag the model
+    to re-read instructions already in context.
+
+    Returns:
+        str: The absolute, symlink-resolved config directory path.
+    """
+    raw = os.environ.get("CLAUDE_CONFIG_DIR") or os.path.join(
+        os.path.expanduser("~"), ".claude"
+    )
+    return os.path.realpath(raw).rstrip("/") or "/"
+
+
 def get_target_directory(tool_name: str, tool_input: dict) -> str | None:
     """Determine the target directory for a tool invocation.
 
@@ -255,6 +274,13 @@ def _main() -> None:
     directory = os.path.realpath(directory).rstrip("/") or "/"
 
     if directory == cwd or directory.startswith(cwd + "/"):
+        sys.exit(0)
+
+    # Never discover inside the Claude Code config dir: its CLAUDE.md is the
+    # global user memory (always loaded at startup) and any plugin CLAUDE.md
+    # under it is config, not a project the user is working in.
+    config = config_dir()
+    if directory == config or directory.startswith(config + "/"):
         sys.exit(0)
 
     found = discover_claude_md(directory, cwd, session_id)
